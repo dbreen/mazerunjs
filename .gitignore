@@ -1,0 +1,13 @@
+*.pyc
+*.swp
+*.db
+*.pyo
+.installed.cfg
+/bin/
+/dev/
+/develop-eggs/
+/dist/
+/downloads/
+/eggs/
+/parts/
+/mazerun/local_settings.py

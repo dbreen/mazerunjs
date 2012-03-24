@@ -1,0 +1,17 @@
+DEBUG=True
+TEMPLATE_DEBUG=DEBUG
+
+ADMINS = (
+    ('Dan Breen', 'dan@danbreen.net'),
+)
+
+MANAGERS = ADMINS
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'mazerun.db',
+    }
+}
+
+DEFAULT_FROM_EMAIL = 'dan@danbreen.net'

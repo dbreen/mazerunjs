@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<p>Use ASWD keys for now... arrows keys would be a lot better but not working yet.
+    Also there's no collision detection or anything. I only ported the basic functionality
+    as a proof of concept. Python &rarr; Coffeescript is a fairly easy transition, though
+    still working out the gotchas of coffee. Pygame &rarr; ProcessingJS was very simple.
+    But this is a very basic game...
+</p>
+
+<canvas id="processing"></canvas>
+
+{% endblock %}
+
+{% block js %}
+<script src="{{ MEDIA_URL }}js/libs/underscore-min.js"></script>
+<script src="{{ MEDIA_URL }}js/libs/processing-1.3.6.js"></script>
+<script src="{{ MEDIA_URL }}js/mazerun.js"></script>
+{% endblock %}

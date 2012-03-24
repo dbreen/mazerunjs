@@ -1,0 +1,121 @@
+.dataform {
+    margin-bottom: 5px;
+    border: 1px solid #d4d4d4;
+    border-radius: 5px; -moz-border-radius: 5px; -webkit-border-radius: 5px;
+    background: #eee;
+    width: 100%;
+}
+.dataform th {
+    font-weight: bold;
+    vertical-align: top;
+}
+.dataform td, .dataform th {
+    padding: 5px;
+    border-top: 1px solid #fff;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.datalist {
+    border: 1px solid #d4d4d4;
+    border-radius: 5px; -moz-border-radius: 5px; -webkit-border-radius: 5px;
+    width: 100%;
+}
+table.datatable th, table.datatable td {
+    border-bottom: 1px solid #e0e0e0;
+}
+table.datatable td, table.datatable th {
+    font-size: 11px; line-height: 15px;
+    vertical-align: top;
+    padding: 5px 10px;
+}
+table.datatable th {
+    text-align: left;
+    font-size: 12px;
+    font-weight: bold;
+}
+table.datatable tr.active {
+    background-color: #EEF7FF;
+}
+.row1 th, .row1 td {
+    background: #f4f4f4;
+}
+.row2 th, .row2 td {
+    background: #fff;
+}
+
+label {
+    margin: 5px 0 -5px 0;
+    padding-top: 5px;
+    width: 150px;
+    color: #444; font-size: 11px; line-height: 14px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+ul.errorlist li {
+    color: #990000;
+}
+
+.info {
+    padding: 5px;
+    border: 1px solid #fcefa1; 
+    border-radius: 4px; -moz-border-radius: 4px; -webkit-border-radius: 4px;
+    background-color: #fbf9ee;
+    color: #666666;
+}
+div.info {
+    margin: 10px 0;
+}
+.error {
+    -moz-border-radius: 4px; -webkit-border-radius: 4px; border-radius: 4px;
+    padding: 5px;
+    border: 1px solid #990000;
+    background-color: #ffeeee;
+    color: #990000;
+}
+div.error {
+    margin: 10px 0;
+}
+
+a.delete {
+    background-color: #bf3030;
+    padding: 3px;
+    margin: 3px;
+    color: white;
+    border-radius: 3px; -moz-border-radius: 3px; -webkit-border-radius: 3px;
+}
+a.delete:hover {
+    background-color: #990000;
+}
+
+/*****************************************************************************
+** Messages
+******************************************************************************/
+ul.messages {
+    margin: 10px 0;
+}
+ul.messages li {
+    -moz-border-radius: 4px; -webkit-border-radius: 4px; border-radius: 4px;
+    padding: 5px;
+    font-weight: bold;
+}
+ul.messages li a.hide {
+    float: right;
+    color: #666666;
+    font-size: 10px;
+    display: none;
+}
+ul.messages li:hover a.hide {
+    display: inline;
+}
+ul.messages li.success {
+    padding-left: 25px;
+    background: #eeffee url(../img/icons/success.png) 5px 50% no-repeat;
+    border: 1px solid #669966;
+    color: #669966;
+}
+ul.messages li.error {
+    padding-left: 25px;
+    background: #ffeeee url(../img/icons/error.png) 5px 50% no-repeat;
+}
+
