@@ -1,4 +1,8 @@
+import os
+
+from django.conf import settings
 from django.http import HttpResponse
+
 from mazerun.utils.decorators import render_to
 
 
@@ -7,6 +11,7 @@ def home(request):
     return {}
 
 def download_source(request):
-    response = HttpResponse(open('coffeebuild/mazerun.coffee'), mimetype='text/coffeescript')
+    source = open(os.path.join(settings.PROJECT_ROOT , '..', 'coffeebuild', 'mazerun.coffee'))
+    response = HttpResponse(source, mimetype='text/coffeescript')
     response['Content-Disposition'] = 'attachment; filename=mazerun.coffee'
     return response
