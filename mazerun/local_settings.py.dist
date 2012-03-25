@@ -15,3 +15,8 @@ DATABASES = {
 }
 
 DEFAULT_FROM_EMAIL = 'dan@danbreen.net'
+
+COMPRESS_ENABLED = True
+COMPRESS_PRECOMPILERS = (
+    ('text/coffeescript', 'coffee --compile --stdio --bare'),
+)

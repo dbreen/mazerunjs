@@ -46,6 +46,10 @@ TEMPLATE_DIRS = (
     os.path.join(PROJECT_ROOT, "templates"),
 )
 
+COMPRESS_PRECOMPILERS = (
+    ('text/coffeescript', 'coffee.bat --compile --stdio'),
+)
+
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -54,6 +58,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.admin',
 
+    'compressor',
     'django_extensions',
     'south',
     

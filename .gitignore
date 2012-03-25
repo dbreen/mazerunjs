@@ -4,6 +4,7 @@
 *.pyo
 .installed.cfg
 /bin/
+/coffeebuild/
 /dev/
 /develop-eggs/
 /dist/

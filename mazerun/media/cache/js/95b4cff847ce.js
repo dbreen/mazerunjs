@@ -254,7 +254,7 @@
     $(document).bind('keypress keyup', (function(event) {
       return scene_manager.keyevent(event);
     }));
-    canvas = document.getElementById("maze");
+    canvas = document.getElementById("processing");
     return processing = new Processing(canvas, begin);
   });
 

@@ -2,19 +2,25 @@
 
 {% block content %}
 
-<p>Use ASWD keys for now... arrows keys would be a lot better but not working yet.
-    Also there's no collision detection or anything. I only ported the basic functionality
-    as a proof of concept. Python &rarr; Coffeescript is a fairly easy transition, though
-    still working out the gotchas of coffee. Pygame &rarr; ProcessingJS was very simple.
-    But this is a very basic game...
-</p>
+<div id="mazecontainer">
+    <canvas id="maze">
+        This game requires the &lt;canvas&gt; tag to work.
+    </canvas>
+</div>
 
-<canvas id="processing"></canvas>
+<div class="instructions">
+    Choose your difficulty then navigate your line to the red dot using ASWD keys.
+    This game was written using <a href="http://processingjs.org">ProcessingJS</a>
+    and <a href="http://coffeescript.org/">CoffeeScript</a>.
+</div>
 
 {% endblock %}
 
 {% block js %}
 <script src="{{ MEDIA_URL }}js/libs/underscore-min.js"></script>
-<script src="{{ MEDIA_URL }}js/libs/processing-1.3.6.js"></script>
+<script src="{{ MEDIA_URL }}js/libs/processing-1.3.6.min.js"></script>
+{% endblock %}
+
+{% block compress_js %}
 <script src="{{ MEDIA_URL }}js/mazerun.js"></script>
 {% endblock %}

@@ -9,8 +9,13 @@
 
 	<meta name="viewport" content="width=device-width">
 
-	<link rel="stylesheet" href="{{ MEDIA_URL }}css/base.css">
-	<link rel="stylesheet" href="{{ MEDIA_URL }}css/styles.css">
+    {% load compress %}
+    {% compress css %}
+    {% block compress_css %}
+	<link rel="stylesheet" href="{{ MEDIA_URL }}css/base.css" />
+	<link rel="stylesheet" href="{{ MEDIA_URL }}css/styles.css" />
+    {% endblock %}
+    {% endcompress %}
 
 	<script src="{{ MEDIA_URL }}js/libs/modernizr-2.5.3.min.js"></script>
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
@@ -23,6 +28,7 @@
     <div id="container">
         <div id="header">
             <h1>Maze Run</h1>
+            <div class="author">by: Dan Breen</div>
         </div>
         
         <div id="content">
@@ -44,6 +50,10 @@
 
     {% block js %}
     {% endblock %}
+    {% compress js %}
+    {% block compress_js %}
+    {% endblock %}
+    {% endcompress %}
     <script language="javascript">
     $(function() {
         $('.messages li a.hide').click(function(e) {

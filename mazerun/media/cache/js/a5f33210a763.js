@@ -172,9 +172,7 @@
     Maze.prototype.render = function(p5) {
       var maze, size;
       this.ticks += 1;
-      p5.background(255);
-      p5.fill.apply(p5, __slice.call(this.wall_color).concat([32]));
-      p5.rect(0, 0, constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT);
+      p5.background.apply(p5, __slice.call(this.wall_color).concat([32]));
       p5.strokeCap(p5.SQUARE);
       size = this.wallwidth;
       maze = this;
@@ -254,7 +252,7 @@
     $(document).bind('keypress keyup', (function(event) {
       return scene_manager.keyevent(event);
     }));
-    canvas = document.getElementById("maze");
+    canvas = document.getElementById("processing");
     return processing = new Processing(canvas, begin);
   });
 
