@@ -16,7 +16,7 @@ $(document).ready ->
         p5.mouseClicked = ->
             scene_manager.mouseclick()
 
-    $(document).bind('keypress keyup', ((event) -> scene_manager.keyevent(event)))
+    $(document).bind('keypress keyup keydown', (event) -> scene_manager.keyevent(event))
 
     canvas = document.getElementById "maze"
     processing = new Processing(canvas, begin)

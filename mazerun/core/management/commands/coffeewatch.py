@@ -1,3 +1,4 @@
+import datetime
 import os
 import time
 import sys
@@ -32,7 +33,7 @@ class Command(BaseCommand):
             self.compilefiles(files)
 
     def compilefiles(self, files):
-        print "Changes detected; joining %d coffee files" % len(files)
+        print "%s Changes detected; joining %d coffee files" % (datetime.datetime.now(), len(files))
         out = open(os.path.join(BUILD_DIR, 'mazerun.coffee'), 'w')
         for file in files:
             out.write(open(os.path.join(COFFEE_DIR, file)).read())

@@ -1,16 +1,19 @@
 
 class Player
     constructor: (pos, dir) ->
-        @x = pos[0]
-        @y = pos[1]
-        @dir = dir
-        @speed = constants.PLAYER_SPEED
+        @init_pos = pos
+        @init_dir = @dir = dir
+        [@x, @y] = pos
         @path = [pos]
+        @speed = constants.PLAYER_SPEED
+        @last_path = null
         @dir_keys = {'left': DIRS[LEFT], 'up': DIRS[TOP], 'right': DIRS[RIGHT], 'down': DIRS[DOWN]}
+        @speedboost = false
 
     update: ->
-        @x += @dir[0] * @speed
-        @y += @dir[1] * @speed
+        speed = @speed * if @speedboost then 2 else 1
+        @x += @dir[0] * speed
+        @y += @dir[1] * speed
 
     change_dir: (dir) ->
         dir = @dir_keys[dir]
@@ -25,6 +28,14 @@ class Player
 
     get_current: ->
         return [@x, @y]
+
+    reset: ->
+        @dir = @init_dir
+        # save the last attempt's path for reference and make sure ot add the latest position
+        @last_path = @path
+        @last_path.push([@x, @y])
+        @path = [@init_pos]
+        [@x, @y] = @init_pos
 
 class Maze
     constructor: (width, height, difficulty) ->
@@ -94,14 +105,16 @@ class Maze
         return neighbors
 
     render: (p5) ->
-    # We don't want rounded edges on our lines
         @ticks += 1
         # warp the background color... doesnt work that well but it does turn white eventually
         #if @ticks % 32 == 0
         #    @wall_color = _.map(@wall_color, (c) -> c + 50*(0.5 - p5.noise(c)))
         p5.background(255)
+        p5.noStroke()
         p5.fill(@.wall_color..., 32)
         p5.rect(0, 0, constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT)
+
+        # We don't want rounded edges on our lines
         p5.strokeCap(p5.SQUARE);
         size = @wallwidth
         maze = @
@@ -112,11 +125,8 @@ class Maze
                 _.each(row, (walls, y) ->
                         [dx, dy] = [x * size + maze.screen_offsets[0], y * size + maze.screen_offsets[1]]
                         if maze.DEBUG
-                        # draw grids
                             p5.rect(dx+8, dy+8, size-16, size-16)
                         [left, top, right, bottom] = walls
-                        #console.log("wall color " + maze.wall_color)
-                        #console.log("done wall color")
                         if left
                             p5.line(dx, dy, dx, dy+size, constants.WALL_THICKNESS)
                         if top
@@ -125,22 +135,17 @@ class Maze
                             p5.line(dx+size, dy, dx+size, dy+size, constants.WALL_THICKNESS)
                         if bottom
                             p5.line(dx, dy+size, dx+size, dy+size, constants.WALL_THICKNESS)
-                    #console.log("maze border" + [x1, y1, x2, y2])
-                    #console.log("done maze border")
                 )
         )
         @draw_marker(p5, @start, constants.START_COLOR, constants.POINT_MARKER_WIDTH)
         @draw_marker(p5, @end, constants.END_COLOR, constants.POINT_MARKER_WIDTH)
         @draw_player(p5)
-    #console.log('Done drawing')
 
     draw_marker: (p5, point, color, radius) ->
         p5.noStroke()
         p5.fill(color...)
         [x, y] = @grid_to_screen(point)
-        #console.log("Marker " + [x, y])
         p5.ellipse(x, y, radius, radius)
-    #console.log("Done Marker" )
 
     draw_player: (p5) ->
         p5.stroke(@player_color...)
@@ -148,9 +153,10 @@ class Maze
         points = @player.get_points()
         for i in [1..(points.length-1)]
             p = [points[i-1][0], points[i-1][1], points[i][0], points[i][1]]
-            #console.log("player " + p)
             p5.line(p...)
-        #console.log("done player")
+        if @player.last_path
+            p5.stroke(@player_color..., 32)
+            draw_lines(p5, @player.last_path)
         return
 
     grid_to_screen: (pos) ->

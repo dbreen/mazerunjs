@@ -19,8 +19,12 @@ constants = {
         LEFT: 37,
         RIGHT: 39,
         UP: 38,
-        DOWN: 40
+        DOWN: 40,
+        SHIFT: 16,
     },
+
+    LOSE_PHRASES: ["Dont hit walls!", "You're not very good at this", "NOPE", "So close! (maybe)"]
+    WIN_PHRASES: ["That's how it's done!", "Impressive!", "WINNING!", "AWWW YYYYEAAHHH!!"]
 }
 
 [DERP, EASY, MEDIUM, HARD, IMPOSSIBRU] = [0..4]
@@ -32,16 +36,19 @@ DIRS = [[-1, 0], [0, -1], [1, 0], [0, 1]]
 
 class Player
     constructor: (pos, dir) ->
-        @x = pos[0]
-        @y = pos[1]
-        @dir = dir
-        @speed = constants.PLAYER_SPEED
+        @init_pos = pos
+        @init_dir = @dir = dir
+        [@x, @y] = pos
         @path = [pos]
+        @speed = constants.PLAYER_SPEED
+        @last_path = null
         @dir_keys = {'left': DIRS[LEFT], 'up': DIRS[TOP], 'right': DIRS[RIGHT], 'down': DIRS[DOWN]}
+        @speedboost = false
 
     update: ->
-        @x += @dir[0] * @speed
-        @y += @dir[1] * @speed
+        speed = @speed * if @speedboost then 2 else 1
+        @x += @dir[0] * speed
+        @y += @dir[1] * speed
 
     change_dir: (dir) ->
         dir = @dir_keys[dir]
@@ -56,6 +63,14 @@ class Player
 
     get_current: ->
         return [@x, @y]
+
+    reset: ->
+        @dir = @init_dir
+        # save the last attempt's path for reference and make sure ot add the latest position
+        @last_path = @path
+        @last_path.push([@x, @y])
+        @path = [@init_pos]
+        [@x, @y] = @init_pos
 
 class Maze
     constructor: (width, height, difficulty) ->
@@ -125,14 +140,16 @@ class Maze
         return neighbors
 
     render: (p5) ->
-    # We don't want rounded edges on our lines
         @ticks += 1
         # warp the background color... doesnt work that well but it does turn white eventually
         #if @ticks % 32 == 0
         #    @wall_color = _.map(@wall_color, (c) -> c + 50*(0.5 - p5.noise(c)))
         p5.background(255)
+        p5.noStroke()
         p5.fill(@.wall_color..., 32)
         p5.rect(0, 0, constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT)
+
+        # We don't want rounded edges on our lines
         p5.strokeCap(p5.SQUARE);
         size = @wallwidth
         maze = @
@@ -143,11 +160,8 @@ class Maze
                 _.each(row, (walls, y) ->
                         [dx, dy] = [x * size + maze.screen_offsets[0], y * size + maze.screen_offsets[1]]
                         if maze.DEBUG
-                        # draw grids
                             p5.rect(dx+8, dy+8, size-16, size-16)
                         [left, top, right, bottom] = walls
-                        #console.log("wall color " + maze.wall_color)
-                        #console.log("done wall color")
                         if left
                             p5.line(dx, dy, dx, dy+size, constants.WALL_THICKNESS)
                         if top
@@ -156,22 +170,17 @@ class Maze
                             p5.line(dx+size, dy, dx+size, dy+size, constants.WALL_THICKNESS)
                         if bottom
                             p5.line(dx, dy+size, dx+size, dy+size, constants.WALL_THICKNESS)
-                    #console.log("maze border" + [x1, y1, x2, y2])
-                    #console.log("done maze border")
                 )
         )
         @draw_marker(p5, @start, constants.START_COLOR, constants.POINT_MARKER_WIDTH)
         @draw_marker(p5, @end, constants.END_COLOR, constants.POINT_MARKER_WIDTH)
         @draw_player(p5)
-    #console.log('Done drawing')
 
     draw_marker: (p5, point, color, radius) ->
         p5.noStroke()
         p5.fill(color...)
         [x, y] = @grid_to_screen(point)
-        #console.log("Marker " + [x, y])
         p5.ellipse(x, y, radius, radius)
-    #console.log("Done Marker" )
 
     draw_player: (p5) ->
         p5.stroke(@player_color...)
@@ -179,9 +188,10 @@ class Maze
         points = @player.get_points()
         for i in [1..(points.length-1)]
             p = [points[i-1][0], points[i-1][1], points[i][0], points[i][1]]
-            #console.log("player " + p)
             p5.line(p...)
-        #console.log("done player")
+        if @player.last_path
+            p5.stroke(@player_color..., 32)
+            draw_lines(p5, @player.last_path)
         return
 
     grid_to_screen: (pos) ->
@@ -207,7 +217,7 @@ $(document).ready ->
         p5.mouseClicked = ->
             scene_manager.mouseclick()
 
-    $(document).bind('keypress keyup', ((event) -> scene_manager.keyevent(event)))
+    $(document).bind('keypress keyup keydown', (event) -> scene_manager.keyevent(event))
 
     canvas = document.getElementById "maze"
     processing = new Processing(canvas, begin)
@@ -235,7 +245,7 @@ class Scene
     render: (p5) ->
         # Draw the scene to the screen. Called every clock tick
 
-    keypress: (letter) ->
+    keypress: (letter, event_type) ->
         return false
 
     mouseclick: ->
@@ -245,7 +255,7 @@ class SceneManager
         @p5 = p5
         @scenes = {}
         @active_scene = null
-        @special_keys = [constants.keys.ESCAPE]
+        @special_keys = _.map(constants.keys, _.identity)
 
     register_scene: (scene_key, scene_class) ->
         scene = new scene_class(@)
@@ -275,13 +285,13 @@ class SceneManager
         charCode = event.which or event.keyCode;
         # We need keyup to track special keys like Escape, but we don't want
         # do double-fire normal keypresses w/ keyup (keypress already does that)
-        if event.type == 'keyup'
+        if event.type in ['keydown', 'keyup']
             if charCode not in @special_keys
                 return
             letter = charCode
         else
             letter = String.fromCharCode(charCode)
-        @active_scene.keypress(letter)
+        @active_scene.keypress(letter, event.type)
 
     mouseclick: ->
         @active_scene.mouseclick()
@@ -294,12 +304,15 @@ class MazeScene extends Scene
     setup: (difficulty) ->
         if difficulty? or not @maze
             @maze = new Maze(constants.MAZE_WIDTH, constants.MAZE_HEIGHT, difficulty)
-            @starting_ticks = 3 * (60 / (60 / constants.FRAMERATE)) # 3 seconds
+            @reset_ticks()
             @lose_match_color = @p5.color(@maze.wall_color...)
             @win_match_color = @p5.color(constants.END_COLOR...)
             @set_state('status', 'starting')
         if @get_state('status') != 'dead'
             @set_state('status', 'starting')
+
+    reset_ticks: ->
+        @starting_ticks = 3 * (60 / (60 / constants.FRAMERATE)) # 3 seconds
 
     render: (p5) ->
         @maze.render(p5)
@@ -307,26 +320,32 @@ class MazeScene extends Scene
         if status == 'dead'
             p5.fill(0, 128)
             p5.textFont(@font, 64)
-            text = "You're dead, bro"
-            center_text(p5, 64, text)
+            center_text(p5, @dead_text)
+            p5.textSize(32)
+            center_text(p5, "Press spacebar to restart", 100)
+            center_text(p5, "Escape for menu", 150)
+            return
         else if status == 'win'
             p5.fill(0, 128)
             p5.textFont(@font, 64)
-            text = "WINNING!!!"
-            center_text(p5, 64, text)
+            center_text(p5, @win_text)
+            return
         else if status == 'playing'
             @maze.player.update()
         else if status == 'starting'
             @do_starting(p5)
+            return
 
         curpos = @maze.player.get_current()
         cur_pixel = p5.get(curpos[0], curpos[1])
         if cur_pixel == @lose_match_color
             @set_state('status', 'dead')
+            @dead_text = random_choice(constants.LOSE_PHRASES)
         else if cur_pixel == @win_match_color
             #TODO: there's a 1 in 17 million chance for this to falsely win because
             # maze color matches winning marker color
             @set_state('status', 'win')
+            @win_text = random_choice(constants.WIN_PHRASES)
 
     do_starting: (p5) ->
         @starting_ticks -= 1
@@ -340,17 +359,30 @@ class MazeScene extends Scene
         fontwidth = p5.textWidth(seconds)
         p5.text(seconds, constants.SCREEN_WIDTH/2 - fontwidth/2, constants.SCREEN_HEIGHT/2 + fontsize/3)
 
-    keypress: (letter) ->
-        if letter in ['a', constants.keys.LEFT]
-            @maze.player.change_dir('left')
-        else if letter in ['w', constants.keys.UP]
-            @maze.player.change_dir('up')
-        else if letter in ['d', constants.keys.RIGHT]
-            @maze.player.change_dir('right')
-        else if letter in ['s', constants.keys.DOWN]
-            @maze.player.change_dir('down')
-        else if letter == constants.keys.ESCAPE
-            @manager.switch_scene('menu')
+    keypress: (letter, event_type) ->
+        switch event_type
+            when 'keypress'
+                switch letter
+                    when 'a' then @maze.player.change_dir('left')
+                    when 'w' then @maze.player.change_dir('up')
+                    when 'd' then @maze.player.change_dir('right')
+                    when 's' then @maze.player.change_dir('down')
+                    when ' '
+                        if @get_state('status') == 'dead'
+                            @reset_ticks()
+                            @maze.player.reset()
+                            @set_state('status', 'starting')
+            when 'keydown'
+                switch letter
+                    when constants.keys.LEFT then @maze.player.change_dir('left')
+                    when constants.keys.UP then @maze.player.change_dir('up')
+                    when constants.keys.RIGHT then @maze.player.change_dir('right')
+                    when constants.keys.DOWN then @maze.player.change_dir('down')
+                    when constants.keys.ESCAPE then @manager.switch_scene('menu')
+                    when constants.keys.SHIFT then @maze.player.speedboost = true
+            when 'keyup'
+                switch letter
+                    when constants.keys.SHIFT then @maze.player.speedboost = false
 class Pipe
     constructor: (color) ->
         @color = color
@@ -485,6 +517,9 @@ point_in_rect = (point, rect) ->
     return point[0] >= rect[0] and point[0] <= rect[0] + rect[2] and
            point[1] >= rect[1] and point[1] <= rect[1] + rect[3]
 
-center_text = (p5, fontsize, text) ->
+center_text = (p5, text, y_offset) ->
+    # Center the text horizontally based on size text will be, center
+    # vertically plus y_offset (negative to be higher)
+    y = constants.SCREEN_HEIGHT/2 + (y_offset or 0)
     width = p5.textWidth(text)
-    p5.text(text, constants.SCREEN_WIDTH/2 - width/2, constants.SCREEN_HEIGHT/2 - fontsize/2)
+    p5.text(text, constants.SCREEN_WIDTH/2 - width/2, y)

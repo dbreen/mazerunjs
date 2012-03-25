@@ -23,8 +23,11 @@
       LEFT: 37,
       RIGHT: 39,
       UP: 38,
-      DOWN: 40
-    }
+      DOWN: 40,
+      SHIFT: 16
+    },
+    LOSE_PHRASES: ["Dont hit walls!", "You're not very good at this", "NOPE", "So close! (maybe)"],
+    WIN_PHRASES: ["That's how it's done!", "Impressive!", "WINNING!", "AWWW YYYYEAAHHH!!"]
   };
 
   _ref = [0, 1, 2, 3, 4], DERP = _ref[0], EASY = _ref[1], MEDIUM = _ref[2], HARD = _ref[3], IMPOSSIBRU = _ref[4];
@@ -38,22 +41,26 @@
   Player = (function() {
 
     function Player(pos, dir) {
-      this.x = pos[0];
-      this.y = pos[1];
-      this.dir = dir;
-      this.speed = constants.PLAYER_SPEED;
+      this.init_pos = pos;
+      this.init_dir = this.dir = dir;
+      this.x = pos[0], this.y = pos[1];
       this.path = [pos];
+      this.speed = constants.PLAYER_SPEED;
+      this.last_path = null;
       this.dir_keys = {
         'left': DIRS[LEFT],
         'up': DIRS[TOP],
         'right': DIRS[RIGHT],
         'down': DIRS[DOWN]
       };
+      this.speedboost = false;
     }
 
     Player.prototype.update = function() {
-      this.x += this.dir[0] * this.speed;
-      return this.y += this.dir[1] * this.speed;
+      var speed;
+      speed = this.speed * (this.speedboost ? 2 : 1);
+      this.x += this.dir[0] * speed;
+      return this.y += this.dir[1] * speed;
     };
 
     Player.prototype.change_dir = function(dir) {
@@ -73,6 +80,15 @@
 
     Player.prototype.get_current = function() {
       return [this.x, this.y];
+    };
+
+    Player.prototype.reset = function() {
+      var _ref3;
+      this.dir = this.init_dir;
+      this.last_path = this.path;
+      this.last_path.push([this.x, this.y]);
+      this.path = [this.init_pos];
+      return _ref3 = this.init_pos, this.x = _ref3[0], this.y = _ref3[1], _ref3;
     };
 
     return Player;
@@ -177,6 +193,7 @@
       var maze, size;
       this.ticks += 1;
       p5.background(255);
+      p5.noStroke();
       p5.fill.apply(p5, __slice.call(this.wall_color).concat([32]));
       p5.rect(0, 0, constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT);
       p5.strokeCap(p5.SQUARE);
@@ -223,6 +240,10 @@
         p = [points[i - 1][0], points[i - 1][1], points[i][0], points[i][1]];
         p5.line.apply(p5, p);
       }
+      if (this.player.last_path) {
+        p5.stroke.apply(p5, __slice.call(this.player_color).concat([32]));
+        draw_lines(p5, this.player.last_path);
+      }
     };
 
     Maze.prototype.grid_to_screen = function(pos) {
@@ -255,9 +276,9 @@
         return scene_manager.mouseclick();
       };
     };
-    $(document).bind('keypress keyup', (function(event) {
+    $(document).bind('keypress keyup keydown', function(event) {
       return scene_manager.keyevent(event);
-    }));
+    });
     canvas = document.getElementById("maze");
     processing = new Processing(canvas, begin);
     return $('#maze').focus();
@@ -288,7 +309,7 @@
 
     Scene.prototype.render = function(p5) {};
 
-    Scene.prototype.keypress = function(letter) {
+    Scene.prototype.keypress = function(letter, event_type) {
       return false;
     };
 
@@ -304,7 +325,7 @@
       this.p5 = p5;
       this.scenes = {};
       this.active_scene = null;
-      this.special_keys = [constants.keys.ESCAPE];
+      this.special_keys = _.map(constants.keys, _.identity);
     }
 
     SceneManager.prototype.register_scene = function(scene_key, scene_class) {
@@ -339,15 +360,15 @@
     };
 
     SceneManager.prototype.keyevent = function(event) {
-      var charCode, letter;
+      var charCode, letter, _ref3;
       charCode = event.which || event.keyCode;
-      if (event.type === 'keyup') {
+      if ((_ref3 = event.type) === 'keydown' || _ref3 === 'keyup') {
         if (__indexOf.call(this.special_keys, charCode) < 0) return;
         letter = charCode;
       } else {
         letter = String.fromCharCode(charCode);
       }
-      return this.active_scene.keypress(letter);
+      return this.active_scene.keypress(letter, event.type);
     };
 
     SceneManager.prototype.mouseclick = function() {
@@ -376,7 +397,7 @@
       var _ref3, _ref4;
       if ((difficulty != null) || !this.maze) {
         this.maze = new Maze(constants.MAZE_WIDTH, constants.MAZE_HEIGHT, difficulty);
-        this.starting_ticks = 3 * (60 / (60 / constants.FRAMERATE));
+        this.reset_ticks();
         this.lose_match_color = (_ref3 = this.p5).color.apply(_ref3, this.maze.wall_color);
         this.win_match_color = (_ref4 = this.p5).color.apply(_ref4, constants.END_COLOR);
         this.set_state('status', 'starting');
@@ -386,31 +407,41 @@
       }
     };
 
+    MazeScene.prototype.reset_ticks = function() {
+      return this.starting_ticks = 3 * (60 / (60 / constants.FRAMERATE));
+    };
+
     MazeScene.prototype.render = function(p5) {
-      var cur_pixel, curpos, status, text;
+      var cur_pixel, curpos, status;
       this.maze.render(p5);
       status = this.get_state('status');
       if (status === 'dead') {
         p5.fill(0, 128);
         p5.textFont(this.font, 64);
-        text = "You're dead, bro";
-        center_text(p5, 64, text);
+        center_text(p5, this.dead_text);
+        p5.textSize(32);
+        center_text(p5, "Press spacebar to restart", 100);
+        center_text(p5, "Escape for menu", 150);
+        return;
       } else if (status === 'win') {
         p5.fill(0, 128);
         p5.textFont(this.font, 64);
-        text = "WINNING!!!";
-        center_text(p5, 64, text);
+        center_text(p5, this.win_text);
+        return;
       } else if (status === 'playing') {
         this.maze.player.update();
       } else if (status === 'starting') {
         this.do_starting(p5);
+        return;
       }
       curpos = this.maze.player.get_current();
       cur_pixel = p5.get(curpos[0], curpos[1]);
       if (cur_pixel === this.lose_match_color) {
-        return this.set_state('status', 'dead');
+        this.set_state('status', 'dead');
+        return this.dead_text = random_choice(constants.LOSE_PHRASES);
       } else if (cur_pixel === this.win_match_color) {
-        return this.set_state('status', 'win');
+        this.set_state('status', 'win');
+        return this.win_text = random_choice(constants.WIN_PHRASES);
       }
     };
 
@@ -427,17 +458,47 @@
       return p5.text(seconds, constants.SCREEN_WIDTH / 2 - fontwidth / 2, constants.SCREEN_HEIGHT / 2 + fontsize / 3);
     };
 
-    MazeScene.prototype.keypress = function(letter) {
-      if (letter === 'a' || letter === constants.keys.LEFT) {
-        return this.maze.player.change_dir('left');
-      } else if (letter === 'w' || letter === constants.keys.UP) {
-        return this.maze.player.change_dir('up');
-      } else if (letter === 'd' || letter === constants.keys.RIGHT) {
-        return this.maze.player.change_dir('right');
-      } else if (letter === 's' || letter === constants.keys.DOWN) {
-        return this.maze.player.change_dir('down');
-      } else if (letter === constants.keys.ESCAPE) {
-        return this.manager.switch_scene('menu');
+    MazeScene.prototype.keypress = function(letter, event_type) {
+      switch (event_type) {
+        case 'keypress':
+          switch (letter) {
+            case 'a':
+              return this.maze.player.change_dir('left');
+            case 'w':
+              return this.maze.player.change_dir('up');
+            case 'd':
+              return this.maze.player.change_dir('right');
+            case 's':
+              return this.maze.player.change_dir('down');
+            case ' ':
+              if (this.get_state('status') === 'dead') {
+                this.reset_ticks();
+                this.maze.player.reset();
+                return this.set_state('status', 'starting');
+              }
+          }
+          break;
+        case 'keydown':
+          switch (letter) {
+            case constants.keys.LEFT:
+              return this.maze.player.change_dir('left');
+            case constants.keys.UP:
+              return this.maze.player.change_dir('up');
+            case constants.keys.RIGHT:
+              return this.maze.player.change_dir('right');
+            case constants.keys.DOWN:
+              return this.maze.player.change_dir('down');
+            case constants.keys.ESCAPE:
+              return this.manager.switch_scene('menu');
+            case constants.keys.SHIFT:
+              return this.maze.player.speedboost = true;
+          }
+          break;
+        case 'keyup':
+          switch (letter) {
+            case constants.keys.SHIFT:
+              return this.maze.player.speedboost = false;
+          }
       }
     };
 
@@ -643,10 +704,11 @@
     return point[0] >= rect[0] && point[0] <= rect[0] + rect[2] && point[1] >= rect[1] && point[1] <= rect[1] + rect[3];
   };
 
-  center_text = function(p5, fontsize, text) {
-    var width;
+  center_text = function(p5, text, y_offset) {
+    var width, y;
+    y = constants.SCREEN_HEIGHT / 2 + (y_offset || 0);
     width = p5.textWidth(text);
-    return p5.text(text, constants.SCREEN_WIDTH / 2 - width / 2, constants.SCREEN_HEIGHT / 2 - fontsize / 2);
+    return p5.text(text, constants.SCREEN_WIDTH / 2 - width / 2, y);
   };
 
 }).call(this);

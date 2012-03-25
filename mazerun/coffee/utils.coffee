@@ -24,6 +24,9 @@ point_in_rect = (point, rect) ->
     return point[0] >= rect[0] and point[0] <= rect[0] + rect[2] and
            point[1] >= rect[1] and point[1] <= rect[1] + rect[3]
 
-center_text = (p5, fontsize, text) ->
+center_text = (p5, text, y_offset) ->
+    # Center the text horizontally based on size text will be, center
+    # vertically plus y_offset (negative to be higher)
+    y = constants.SCREEN_HEIGHT/2 + (y_offset or 0)
     width = p5.textWidth(text)
-    p5.text(text, constants.SCREEN_WIDTH/2 - width/2, constants.SCREEN_HEIGHT/2 - fontsize/2)
+    p5.text(text, constants.SCREEN_WIDTH/2 - width/2, y)

@@ -21,7 +21,7 @@ class Scene
     render: (p5) ->
         # Draw the scene to the screen. Called every clock tick
 
-    keypress: (letter) ->
+    keypress: (letter, event_type) ->
         return false
 
     mouseclick: ->
@@ -31,7 +31,7 @@ class SceneManager
         @p5 = p5
         @scenes = {}
         @active_scene = null
-        @special_keys = [constants.keys.ESCAPE]
+        @special_keys = _.map(constants.keys, _.identity)
 
     register_scene: (scene_key, scene_class) ->
         scene = new scene_class(@)
@@ -61,13 +61,13 @@ class SceneManager
         charCode = event.which or event.keyCode;
         # We need keyup to track special keys like Escape, but we don't want
         # do double-fire normal keypresses w/ keyup (keypress already does that)
-        if event.type == 'keyup'
+        if event.type in ['keydown', 'keyup']
             if charCode not in @special_keys
                 return
             letter = charCode
         else
             letter = String.fromCharCode(charCode)
-        @active_scene.keypress(letter)
+        @active_scene.keypress(letter, event.type)
 
     mouseclick: ->
         @active_scene.mouseclick()

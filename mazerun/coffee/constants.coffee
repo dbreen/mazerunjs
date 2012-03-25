@@ -19,8 +19,12 @@ constants = {
         LEFT: 37,
         RIGHT: 39,
         UP: 38,
-        DOWN: 40
+        DOWN: 40,
+        SHIFT: 16,
     },
+
+    LOSE_PHRASES: ["Dont hit walls!", "You're not very good at this", "NOPE", "So close! (maybe)"]
+    WIN_PHRASES: ["That's how it's done!", "Impressive!", "WINNING!", "AWWW YYYYEAAHHH!!"]
 }
 
 [DERP, EASY, MEDIUM, HARD, IMPOSSIBRU] = [0..4]
