@@ -12,8 +12,8 @@
     {% load compress %}
     {% compress css %}
     {% block compress_css %}
-	<link rel="stylesheet" href="{{ MEDIA_URL }}css/base.css" />
-	<link rel="stylesheet" href="{{ MEDIA_URL }}css/styles.css" />
+	<link rel="stylesheet" href="{{ MEDIA_URL }}css/base.css" type="text/css" />
+	<link rel="stylesheet" href="{{ MEDIA_URL }}css/style.css" type="text/css" />
     {% endblock %}
     {% endcompress %}
 

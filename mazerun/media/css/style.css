@@ -146,6 +146,9 @@ ul.messages li.error {
     margin: 10px auto;
     text-align: center;
 }
+#mazecontainer canvas {
+    outline: none;
+}
 div.instructions {
     margin: 0 auto;
     text-align: center;

@@ -19,7 +19,11 @@
     END_COLOR: [128, 0, 0],
     POINT_MARKER_WIDTH: 16,
     keys: {
-      ESCAPE: 27
+      ESCAPE: 27,
+      LEFT: 37,
+      RIGHT: 39,
+      UP: 38,
+      DOWN: 40
     }
   };
 
@@ -255,7 +259,8 @@
       return scene_manager.keyevent(event);
     }));
     canvas = document.getElementById("maze");
-    return processing = new Processing(canvas, begin);
+    processing = new Processing(canvas, begin);
+    return $('#maze').focus();
   });
 
   Scene = (function() {
@@ -423,13 +428,13 @@
     };
 
     MazeScene.prototype.keypress = function(letter) {
-      if (letter === 'a') {
+      if (letter === 'a' || letter === constants.keys.LEFT) {
         return this.maze.player.change_dir('left');
-      } else if (letter === 'w') {
+      } else if (letter === 'w' || letter === constants.keys.UP) {
         return this.maze.player.change_dir('up');
-      } else if (letter === 'd') {
+      } else if (letter === 'd' || letter === constants.keys.RIGHT) {
         return this.maze.player.change_dir('right');
-      } else if (letter === 's') {
+      } else if (letter === 's' || letter === constants.keys.DOWN) {
         return this.maze.player.change_dir('down');
       } else if (letter === constants.keys.ESCAPE) {
         return this.manager.switch_scene('menu');

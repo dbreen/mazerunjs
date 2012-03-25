@@ -54,13 +54,13 @@ class MazeScene extends Scene
         p5.text(seconds, constants.SCREEN_WIDTH/2 - fontwidth/2, constants.SCREEN_HEIGHT/2 + fontsize/3)
 
     keypress: (letter) ->
-        if letter == 'a'
+        if letter in ['a', constants.keys.LEFT]
             @maze.player.change_dir('left')
-        else if letter == 'w'
+        else if letter in ['w', constants.keys.UP]
             @maze.player.change_dir('up')
-        else if letter == 'd'
+        else if letter in ['d', constants.keys.RIGHT]
             @maze.player.change_dir('right')
-        else if letter == 's'
+        else if letter in ['s', constants.keys.DOWN]
             @maze.player.change_dir('down')
         else if letter == constants.keys.ESCAPE
             @manager.switch_scene('menu')

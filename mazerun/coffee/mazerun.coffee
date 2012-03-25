@@ -20,3 +20,4 @@ $(document).ready ->
 
     canvas = document.getElementById "maze"
     processing = new Processing(canvas, begin)
+    $('#maze').focus();

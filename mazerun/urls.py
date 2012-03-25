@@ -4,6 +4,7 @@ from django.conf import settings
 
 urlpatterns = patterns('mazerun.core.views',
     url(r'^$', 'home', name='home'),
+    url(r'^download-source/$', 'download_source', name='download_source'),
 )
 
 
