@@ -1,6 +1,5 @@
 class Pipe
-    constructor: (color) ->
-        @color = color
+    constructor: (@color) ->
         rpoint = [Math.random() * constants.SCREEN_WIDTH,
                   Math.random() * constants.SCREEN_HEIGHT]
         @pointlist = [rpoint]
@@ -92,10 +91,6 @@ class MenuScene extends Scene
             p5.text(name, ox + x, oy + y + 20)
             y += 50
         )
-
-    keypress: (letter) ->
-        if letter == 'q'
-            @manager.switch_scene('main')
 
     start_game: (difficulty) ->
         @manager.switch_scene('main', difficulty)

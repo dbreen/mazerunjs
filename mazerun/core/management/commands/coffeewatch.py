@@ -33,10 +33,11 @@ class Command(BaseCommand):
             self.compilefiles(files)
 
     def compilefiles(self, files):
+        print "#"*80
         print "%s Changes detected; joining %d coffee files" % (datetime.datetime.now(), len(files))
         out = open(os.path.join(BUILD_DIR, 'mazerun.coffee'), 'w')
         for file in files:
             out.write(open(os.path.join(COFFEE_DIR, file)).read())
         out.close()
         os.system('coffee.bat --compile --output %s %s/mazerun.coffee' % (OUTPUT_DIR, BUILD_DIR))
-        print "JS generated: %s" % OUTPUT_JS
+        print "JS generated: %s\n" % OUTPUT_JS

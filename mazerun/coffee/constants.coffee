@@ -1,27 +1,27 @@
 constants = {
-    PLAYER_SPEED: 2,
-    PLAYER_LINE_THICKNESS: 3,
-    PLAYER_LINE_COLOR: [0, 255, 0],
+    PLAYER_SPEED: 2
+    PLAYER_LINE_THICKNESS: 3
+    PLAYER_LINE_COLOR: [0, 255, 0]
 
-    SCREEN_WIDTH: 800,
-    SCREEN_HEIGHT: 600,
-    FRAMERATE: 30,
+    SCREEN_WIDTH: 800
+    SCREEN_HEIGHT: 600
+    FRAMERATE: 30
 
-    MAZE_WIDTH: 768,
-    MAZE_HEIGHT: 576,
-    WALL_THICKNESS: 3,
-    START_COLOR: [0, 128, 0],
-    END_COLOR: [128, 0, 0],
-    POINT_MARKER_WIDTH: 16,
+    MAZE_WIDTH: 768
+    MAZE_HEIGHT: 576
+    WALL_THICKNESS: 3
+    START_COLOR: [0, 128, 0]
+    END_COLOR: [128, 0, 0]
+    POINT_MARKER_WIDTH: 16
 
     keys: {
-        ESCAPE: 27,
-        LEFT: 37,
-        RIGHT: 39,
-        UP: 38,
-        DOWN: 40,
-        SHIFT: 16,
-    },
+        ESCAPE: 27
+        LEFT: 37
+        RIGHT: 39
+        UP: 38
+        DOWN: 40
+        SHIFT: 16
+    }
 
     LOSE_PHRASES: ["Dont hit walls!", "You're not very good at this", "NOPE", "So close! (maybe)"]
     WIN_PHRASES: ["That's how it's done!", "Impressive!", "WINNING!", "AWWW YYYYEAAHHH!!"]

@@ -1,5 +1,5 @@
 (function() {
-  var DERP, DIFFICULTY_WIDTHS, DIRECTIONS, DIRS, DOWN, EASY, HARD, IMPOSSIBRU, LEFT, MEDIUM, Maze, MazeScene, MenuScene, Pipe, Player, RIGHT, Scene, SceneManager, TOP, center_text, constants, draw_lines, draw_lines_from, point_in_rect, random_choice, random_color, _ref, _ref2,
+  var DERP, DIFFICULTY_WIDTHS, DIRECTIONS, DIRS, DOWN, EASY, HARD, IMPOSSIBRU, LEFT, MEDIUM, Marker, Maze, MazeScene, MenuScene, Particle, Pipe, Player, RIGHT, Scene, SceneManager, TOP, center_text, constants, draw_lines, draw_lines_from, point_in_rect, random_choice, random_color, _ref, _ref2,
     __slice = Array.prototype.slice,
     __indexOf = Array.prototype.indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
     __hasProp = Object.prototype.hasOwnProperty,
@@ -95,14 +95,95 @@
 
   })();
 
+  Particle = (function() {
+
+    function Particle(pos, vel, color) {
+      this.pos = pos;
+      this.vel = vel;
+      this.color = color;
+      this.alpha = 255;
+    }
+
+    Particle.prototype.update = function() {
+      this.pos[0] += this.vel[0];
+      this.pos[1] += this.vel[1];
+      this.alpha -= 3;
+      return this.alpha > 0;
+    };
+
+    Particle.prototype.render = function(p5) {
+      p5.set(this.pos[0], this.pos[1], p5.color.apply(p5, __slice.call(this.color).concat([this.alpha])));
+    };
+
+    return Particle;
+
+  })();
+
+  Marker = (function() {
+
+    function Marker(maze, position, color, radius) {
+      this.maze = maze;
+      this.position = position;
+      this.color = color;
+      this.radius = radius;
+      this.exploding = false;
+      this.done_exploding = false;
+      this.p5 = this.maze.p5;
+    }
+
+    Marker.prototype.explode = function() {
+      var center, factor, i, vx, vy;
+      this.exploding = true;
+      center = this.maze.grid_to_screen(this.position);
+      this.particles = [];
+      for (i = 0; i < 360; i++) {
+        factor = 5 * Math.random();
+        vx = Math.sin(i / 360 * Math.PI * 2) * factor;
+        vy = Math.cos(i / 360 * Math.PI * 2) * factor;
+        this.particles.push(new Particle([center[0], center[1]], [vx, vy], this.color));
+      }
+    };
+
+    Marker.prototype.do_explode = function() {
+      var alive, any_alive, particle, _i, _len, _ref3;
+      any_alive = false;
+      _ref3 = this.particles;
+      for (_i = 0, _len = _ref3.length; _i < _len; _i++) {
+        particle = _ref3[_i];
+        alive = particle.update();
+        if (alive) {
+          any_alive = true;
+          particle.render(this.p5);
+        }
+      }
+      if (!any_alive) this.done_exploding = true;
+    };
+
+    Marker.prototype.render = function() {
+      var x, y, _ref3, _ref4;
+      if (this.exploding) {
+        if (!this.done_exploding) this.do_explode();
+      } else {
+        this.p5.noStroke();
+        (_ref3 = this.p5).fill.apply(_ref3, this.color);
+        _ref4 = this.maze.grid_to_screen(this.position), x = _ref4[0], y = _ref4[1];
+        this.p5.ellipse(x, y, this.radius, this.radius);
+      }
+    };
+
+    return Marker;
+
+  })();
+
   Maze = (function() {
 
-    function Maze(width, height, difficulty) {
+    function Maze(p5, width, height, difficulty) {
       var corners, x, y;
-      this.DEBUG = false;
-      this.ticks = 0;
+      this.p5 = p5;
       this.width = width;
       this.height = height;
+      this.DEBUG = false;
+      this.ticks = 0;
       this.wallwidth = DIFFICULTY_WIDTHS[difficulty];
       this.screen_offsets = [(constants.SCREEN_WIDTH - width) / 2, (constants.SCREEN_HEIGHT - height) / 2];
       this.gridsize = [width / this.wallwidth, height / this.wallwidth];
@@ -127,9 +208,6 @@
       });
       corners = [[0, 0], [0, this.gridsize[1] - 1], [this.gridsize[0] - 1, 0], [this.gridsize[0] - 1, this.gridsize[1] - 1]];
       this.start = random_choice(corners);
-      while (this.end === this.start) {
-        this.end = random_choice(corners);
-      }
       while (true) {
         this.end = random_choice(corners);
         if (this.end !== this.start) break;
@@ -137,6 +215,8 @@
       this.start_dir = null;
       this.make_solution();
       this.player = new Player(this.grid_to_screen(this.start), this.start_dir);
+      this.start_marker = new Marker(this, this.start, constants.START_COLOR, constants.POINT_MARKER_WIDTH);
+      this.end_marker = new Marker(this, this.end, constants.END_COLOR, constants.POINT_MARKER_WIDTH);
     }
 
     Maze.prototype.make_solution = function() {
@@ -175,7 +255,6 @@
     };
 
     Maze.prototype.find_neighbors = function(x, y) {
-      "Find all x, y pairs in the up/down right/left directions that are still\nwithin the bounds of the grid. Return the directions towards each neighbor";
       var dir, idir, neighbors, nx, ny, _i, _len, _ref3;
       neighbors = [];
       for (_i = 0, _len = DIRECTIONS.length; _i < _len; _i++) {
@@ -189,65 +268,60 @@
       return neighbors;
     };
 
-    Maze.prototype.render = function(p5) {
-      var maze, size;
+    Maze.prototype.render = function() {
+      var size, _ref3,
+        _this = this;
       this.ticks += 1;
-      p5.background(255);
-      p5.noStroke();
-      p5.fill.apply(p5, __slice.call(this.wall_color).concat([32]));
-      p5.rect(0, 0, constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT);
-      p5.strokeCap(p5.SQUARE);
+      this.p5.background(255);
+      this.p5.noStroke();
+      (_ref3 = this.p5).fill.apply(_ref3, __slice.call(this.wall_color).concat([32]));
+      this.p5.rect(0, 0, constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT);
+      this.p5.strokeCap(this.p5.SQUARE);
       size = this.wallwidth;
-      maze = this;
-      p5.fill(127, 127, 127);
-      p5.stroke.apply(p5, maze.wall_color);
-      p5.strokeWeight(constants.WALL_THICKNESS);
+      this.p5.fill(127, 127, 127);
+      this.p5.strokeWeight(constants.WALL_THICKNESS);
       _.each(this.grid, function(row, x) {
         return _.each(row, function(walls, y) {
-          var bottom, dx, dy, left, right, top, _ref3;
-          _ref3 = [x * size + maze.screen_offsets[0], y * size + maze.screen_offsets[1]], dx = _ref3[0], dy = _ref3[1];
-          if (maze.DEBUG) p5.rect(dx + 8, dy + 8, size - 16, size - 16);
+          var bottom, dx, dy, left, right, top, _ref4, _ref5, _ref6;
+          _ref4 = [x * size + _this.screen_offsets[0], y * size + _this.screen_offsets[1]], dx = _ref4[0], dy = _ref4[1];
+          if (_this.DEBUG) {
+            _this.p5.noStroke();
+            (_ref5 = _this.p5).fill.apply(_ref5, __slice.call(_this.wall_color).concat([64]));
+            _this.p5.rect(dx + _this.wallwidth / 2, dy + _this.wallwidth / 2, size - 8, size - 8);
+          }
+          (_ref6 = _this.p5).stroke.apply(_ref6, _this.wall_color);
           left = walls[0], top = walls[1], right = walls[2], bottom = walls[3];
-          if (left) p5.line(dx, dy, dx, dy + size, constants.WALL_THICKNESS);
-          if (top) p5.line(dx, dy, dx + size, dy, constants.WALL_THICKNESS);
+          if (left) _this.p5.line(dx, dy, dx, dy + size, constants.WALL_THICKNESS);
+          if (top) _this.p5.line(dx, dy, dx + size, dy, constants.WALL_THICKNESS);
           if (right) {
-            p5.line(dx + size, dy, dx + size, dy + size, constants.WALL_THICKNESS);
+            _this.p5.line(dx + size, dy, dx + size, dy + size, constants.WALL_THICKNESS);
           }
           if (bottom) {
-            return p5.line(dx, dy + size, dx + size, dy + size, constants.WALL_THICKNESS);
+            return _this.p5.line(dx, dy + size, dx + size, dy + size, constants.WALL_THICKNESS);
           }
         });
       });
-      this.draw_marker(p5, this.start, constants.START_COLOR, constants.POINT_MARKER_WIDTH);
-      this.draw_marker(p5, this.end, constants.END_COLOR, constants.POINT_MARKER_WIDTH);
-      return this.draw_player(p5);
+      this.draw_player();
+      this.start_marker.render();
+      return this.end_marker.render();
     };
 
-    Maze.prototype.draw_marker = function(p5, point, color, radius) {
-      var x, y, _ref3;
-      p5.noStroke();
-      p5.fill.apply(p5, color);
-      _ref3 = this.grid_to_screen(point), x = _ref3[0], y = _ref3[1];
-      return p5.ellipse(x, y, radius, radius);
-    };
-
-    Maze.prototype.draw_player = function(p5) {
-      var i, p, points, _ref3;
-      p5.stroke.apply(p5, this.player_color);
-      p5.strokeWeight(constants.PLAYER_LINE_THICKNESS);
-      points = this.player.get_points();
-      for (i = 1, _ref3 = points.length - 1; 1 <= _ref3 ? i <= _ref3 : i >= _ref3; 1 <= _ref3 ? i++ : i--) {
-        p = [points[i - 1][0], points[i - 1][1], points[i][0], points[i][1]];
-        p5.line.apply(p5, p);
-      }
+    Maze.prototype.draw_player = function() {
+      var _ref3, _ref4;
+      (_ref3 = this.p5).stroke.apply(_ref3, this.player_color);
+      this.p5.strokeWeight(constants.PLAYER_LINE_THICKNESS);
+      draw_lines(this.p5, this.player.get_points());
       if (this.player.last_path) {
-        p5.stroke.apply(p5, __slice.call(this.player_color).concat([32]));
-        draw_lines(p5, this.player.last_path);
+        (_ref4 = this.p5).stroke.apply(_ref4, __slice.call(this.player_color).concat([32]));
+        draw_lines(this.p5, this.player.last_path);
       }
+    };
+
+    Maze.prototype.completed = function() {
+      return this.end_marker.explode();
     };
 
     Maze.prototype.grid_to_screen = function(pos) {
-      "Convert grid coordinates to screen coordinates";
       var ww;
       ww = this.wallwidth;
       return [(pos[0] + 1) * ww - ww / 2 + constants.WALL_THICKNESS / 2 + this.screen_offsets[0], (pos[1] + 1) * ww - ww / 2 + constants.WALL_THICKNESS / 2 + this.screen_offsets[1]];
@@ -396,7 +470,7 @@
     MazeScene.prototype.setup = function(difficulty) {
       var _ref3, _ref4;
       if ((difficulty != null) || !this.maze) {
-        this.maze = new Maze(constants.MAZE_WIDTH, constants.MAZE_HEIGHT, difficulty);
+        this.maze = new Maze(this.p5, constants.MAZE_WIDTH, constants.MAZE_HEIGHT, difficulty);
         this.reset_ticks();
         this.lose_match_color = (_ref3 = this.p5).color.apply(_ref3, this.maze.wall_color);
         this.win_match_color = (_ref4 = this.p5).color.apply(_ref4, constants.END_COLOR);
@@ -415,33 +489,35 @@
       var cur_pixel, curpos, status;
       this.maze.render(p5);
       status = this.get_state('status');
-      if (status === 'dead') {
-        p5.fill(0, 128);
-        p5.textFont(this.font, 64);
-        center_text(p5, this.dead_text);
-        p5.textSize(32);
-        center_text(p5, "Press spacebar to restart", 100);
-        center_text(p5, "Escape for menu", 150);
-        return;
-      } else if (status === 'win') {
-        p5.fill(0, 128);
-        p5.textFont(this.font, 64);
-        center_text(p5, this.win_text);
-        return;
-      } else if (status === 'playing') {
-        this.maze.player.update();
-      } else if (status === 'starting') {
-        this.do_starting(p5);
-        return;
-      }
-      curpos = this.maze.player.get_current();
-      cur_pixel = p5.get(curpos[0], curpos[1]);
-      if (cur_pixel === this.lose_match_color) {
-        this.set_state('status', 'dead');
-        return this.dead_text = random_choice(constants.LOSE_PHRASES);
-      } else if (cur_pixel === this.win_match_color) {
-        this.set_state('status', 'win');
-        return this.win_text = random_choice(constants.WIN_PHRASES);
+      switch (status) {
+        case 'dead':
+          p5.fill(0, 128);
+          p5.textFont(this.font, 64);
+          center_text(p5, this.dead_text);
+          p5.textSize(32);
+          center_text(p5, "Press spacebar to restart", 100);
+          center_text(p5, "Escape for menu", 150);
+          break;
+        case 'win':
+          p5.fill(0, 128);
+          p5.textFont(this.font, 64);
+          center_text(p5, this.win_text);
+          break;
+        case 'playing':
+          this.maze.player.update();
+          curpos = this.maze.player.get_current();
+          cur_pixel = p5.get(curpos[0], curpos[1]);
+          if (cur_pixel === this.lose_match_color && !this.maze.DEBUG) {
+            this.set_state('status', 'dead');
+            return this.dead_text = random_choice(constants.LOSE_PHRASES);
+          } else if (cur_pixel === this.win_match_color) {
+            this.maze.completed();
+            this.set_state('status', 'win');
+            return this.win_text = random_choice(constants.WIN_PHRASES);
+          }
+          break;
+        case 'starting':
+          this.do_starting(p5);
       }
     };
 
@@ -476,6 +552,9 @@
                 this.maze.player.reset();
                 return this.set_state('status', 'starting');
               }
+              break;
+            case 'q':
+              return this.maze.DEBUG = !this.maze.DEBUG;
           }
           break;
         case 'keydown':
@@ -649,10 +728,6 @@
         p5.text(name, ox + x, oy + y + 20);
         return y += 50;
       });
-    };
-
-    MenuScene.prototype.keypress = function(letter) {
-      if (letter === 'q') return this.manager.switch_scene('main');
     };
 
     MenuScene.prototype.start_game = function(difficulty) {
