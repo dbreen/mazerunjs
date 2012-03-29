@@ -82,11 +82,15 @@
       return [this.x, this.y];
     };
 
+    Player.prototype.set_last_path = function() {
+      this.last_path = this.path;
+      return this.last_path.push([this.x, this.y]);
+    };
+
     Player.prototype.reset = function() {
       var _ref3;
       this.dir = this.init_dir;
-      this.last_path = this.path;
-      this.last_path.push([this.x, this.y]);
+      this.set_last_path();
       this.path = [this.init_pos];
       return _ref3 = this.init_pos, this.x = _ref3[0], this.y = _ref3[1], _ref3;
     };
@@ -137,7 +141,7 @@
       center = this.maze.grid_to_screen(this.position);
       this.particles = [];
       for (i = 0; i < 360; i++) {
-        factor = 5 * Math.random();
+        factor = 0.5 + 5 * Math.random();
         vx = Math.sin(i / 360 * Math.PI * 2) * factor;
         vy = Math.cos(i / 360 * Math.PI * 2) * factor;
         this.particles.push(new Particle([center[0], center[1]], [vx, vy], this.color));
@@ -161,14 +165,11 @@
 
     Marker.prototype.render = function() {
       var x, y, _ref3, _ref4;
-      if (this.exploding) {
-        if (!this.done_exploding) this.do_explode();
-      } else {
-        this.p5.noStroke();
-        (_ref3 = this.p5).fill.apply(_ref3, this.color);
-        _ref4 = this.maze.grid_to_screen(this.position), x = _ref4[0], y = _ref4[1];
-        this.p5.ellipse(x, y, this.radius, this.radius);
-      }
+      if (this.exploding) if (!this.done_exploding) this.do_explode();
+      this.p5.noStroke();
+      (_ref3 = this.p5).fill.apply(_ref3, __slice.call(this.color).concat([this.exploding ? 32 : 255]));
+      _ref4 = this.maze.grid_to_screen(this.position), x = _ref4[0], y = _ref4[1];
+      this.p5.ellipse(x, y, this.radius, this.radius);
     };
 
     return Marker;
@@ -185,6 +186,7 @@
       this.DEBUG = false;
       this.ticks = 0;
       this.wallwidth = DIFFICULTY_WIDTHS[difficulty];
+      this.player_width = constants.PLAYER_LINE_THICKNESS;
       this.screen_offsets = [(constants.SCREEN_WIDTH - width) / 2, (constants.SCREEN_HEIGHT - height) / 2];
       this.gridsize = [width / this.wallwidth, height / this.wallwidth];
       this.grid = (function() {
@@ -206,6 +208,7 @@
       this.player_color = _.map(this.wall_color, function(rgbv) {
         return 255 - rgbv;
       });
+      this.player_alpha = 255;
       corners = [[0, 0], [0, this.gridsize[1] - 1], [this.gridsize[0] - 1, 0], [this.gridsize[0] - 1, this.gridsize[1] - 1]];
       this.start = random_choice(corners);
       while (true) {
@@ -272,6 +275,10 @@
       var size, _ref3,
         _this = this;
       this.ticks += 1;
+      if (this.winning) {
+        this.player_width += 2;
+        this.player_alpha -= 10;
+      }
       this.p5.background(255);
       this.p5.noStroke();
       (_ref3 = this.p5).fill.apply(_ref3, __slice.call(this.wall_color).concat([32]));
@@ -308,16 +315,20 @@
 
     Maze.prototype.draw_player = function() {
       var _ref3, _ref4;
-      (_ref3 = this.p5).stroke.apply(_ref3, this.player_color);
-      this.p5.strokeWeight(constants.PLAYER_LINE_THICKNESS);
+      (_ref3 = this.p5).stroke.apply(_ref3, __slice.call(this.player_color).concat([this.player_alpha]));
+      this.p5.strokeWeight(this.player_width);
       draw_lines(this.p5, this.player.get_points());
       if (this.player.last_path) {
+        this.p5.strokeWeight(constants.PLAYER_LINE_THICKNESS);
         (_ref4 = this.p5).stroke.apply(_ref4, __slice.call(this.player_color).concat([32]));
         draw_lines(this.p5, this.player.last_path);
       }
     };
 
     Maze.prototype.completed = function() {
+      this.winning = true;
+      this.player.set_last_path();
+      this.start_marker.explode();
       return this.end_marker.explode();
     };
 

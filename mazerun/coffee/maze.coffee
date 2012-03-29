@@ -29,11 +29,14 @@ class Player
     get_current: ->
         return [@x, @y]
 
-    reset: ->
-        @dir = @init_dir
+    set_last_path: ->
         # save the last attempt's path for reference and make sure ot add the latest position
         @last_path = @path
         @last_path.push([@x, @y])
+
+    reset: ->
+        @dir = @init_dir
+        @set_last_path()
         @path = [@init_pos]
         [@x, @y] = @init_pos
 
@@ -64,7 +67,7 @@ class Marker
         center = @maze.grid_to_screen(@position)
         @particles = []
         for i in [0...360]
-            factor = 5 * Math.random()
+            factor = 0.5 + 5 * Math.random()
             vx = Math.sin(i / 360 * Math.PI * 2) * factor
             vy = Math.cos(i / 360 * Math.PI * 2) * factor
             @particles.push(new Particle([center[0], center[1]], [vx, vy], @color))
@@ -85,11 +88,10 @@ class Marker
         if @exploding
             if not @done_exploding
                 @do_explode()
-        else
-            @p5.noStroke()
-            @p5.fill(@color...)
-            [x, y] = @maze.grid_to_screen(@position)
-            @p5.ellipse(x, y, @radius, @radius)
+        @p5.noStroke()
+        @p5.fill(@color..., if @exploding then 32 else 255)
+        [x, y] = @maze.grid_to_screen(@position)
+        @p5.ellipse(x, y, @radius, @radius)
         return
 
 class Maze
@@ -97,6 +99,7 @@ class Maze
         @DEBUG = false
         @ticks = 0
         @wallwidth = DIFFICULTY_WIDTHS[difficulty]
+        @player_width = constants.PLAYER_LINE_THICKNESS
         @screen_offsets = [(constants.SCREEN_WIDTH - width) / 2,
                            (constants.SCREEN_HEIGHT - height) / 2]
         @gridsize = [width / @wallwidth, height / @wallwidth]
@@ -106,6 +109,7 @@ class Maze
         # configure some defaults for this specific maze
         @wall_color = random_color()
         @player_color = _.map(@wall_color, (rgbv) -> 255 - rgbv)
+        @player_alpha = 255
         corners = [[0, 0], [0, @gridsize[1] - 1], [@gridsize[0] - 1, 0], [@gridsize[0] - 1, @gridsize[1] - 1]]
         @start = random_choice(corners)
         while true
@@ -160,6 +164,9 @@ class Maze
 
     render: ->
         @ticks += 1
+        if @winning
+            @player_width += 2
+            @player_alpha -= 10
         # warp the wall and background colors... ehhh not great
         #if @ticks % 2 == 0
         #    @wall_color = _.map(@wall_color, (c) -> (Math.random() - 0.5) * 20 + c)
@@ -197,15 +204,19 @@ class Maze
         @end_marker.render()
 
     draw_player: ->
-        @p5.stroke(@player_color...)
-        @p5.strokeWeight(constants.PLAYER_LINE_THICKNESS);
+        @p5.stroke(@player_color..., @player_alpha)
+        @p5.strokeWeight(@player_width);
         draw_lines(@p5, @player.get_points())
         if @player.last_path
+            @p5.strokeWeight(constants.PLAYER_LINE_THICKNESS)
             @p5.stroke(@player_color..., 32)
             draw_lines(@p5, @player.last_path)
         return
 
     completed: ->
+        @winning = true
+        @player.set_last_path()
+        @start_marker.explode()
         @end_marker.explode()
 
     grid_to_screen: (pos) ->
