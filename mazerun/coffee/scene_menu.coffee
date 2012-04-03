@@ -50,6 +50,7 @@ class MenuScene extends Scene
         return
 
     render: (p5) ->
+        return @_fucky p5 if @fucky
         p5.background(0)
         i = 0
         p5.strokeCap(p5.SQUARE);
@@ -101,3 +102,18 @@ class MenuScene extends Scene
     mouseclick: ->
         if @current_option
             @current_option()
+
+    _fucky: (p5) ->
+        s = 256
+        if not @_fuckytick then @_fuckytick = 0
+        @_fuckytick += 1
+        p5.background(0)
+        for x in [0...s]
+            for y in [0...s]
+                p5.set((x * (@_fuckytick/64)) % s, (y * (@_fuckytick/64)) % s, p5.color((x + @_fuckytick) % s, (y + @_fuckytick) % s, p5.sin((x + y) / p5.PI) * 256))
+
+    keypress: (l, t) ->
+        switch t
+            when 'keypress'
+                switch l
+                    when 'x' then @fucky = not @fucky

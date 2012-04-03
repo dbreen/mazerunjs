@@ -821,6 +821,7 @@
 
     MenuScene.prototype.render = function(p5) {
       var i, pipe, _i, _len, _ref3;
+      if (this.fucky) return this._fucky(p5);
       p5.background(0);
       i = 0;
       p5.strokeCap(p5.SQUARE);
@@ -882,6 +883,36 @@
 
     MenuScene.prototype.mouseclick = function() {
       if (this.current_option) return this.current_option();
+    };
+
+    MenuScene.prototype._fucky = function(p5) {
+      var s, x, y, _results;
+      s = 256;
+      if (!this._fuckytick) this._fuckytick = 0;
+      this._fuckytick += 1;
+      p5.background(0);
+      _results = [];
+      for (x = 0; 0 <= s ? x < s : x > s; 0 <= s ? x++ : x--) {
+        _results.push((function() {
+          var _results2;
+          _results2 = [];
+          for (y = 0; 0 <= s ? y < s : y > s; 0 <= s ? y++ : y--) {
+            _results2.push(p5.set((x * (this._fuckytick / 64)) % s, (y * (this._fuckytick / 64)) % s, p5.color((x + this._fuckytick) % s, (y + this._fuckytick) % s, p5.sin((x + y) / p5.PI) * 256)));
+          }
+          return _results2;
+        }).call(this));
+      }
+      return _results;
+    };
+
+    MenuScene.prototype.keypress = function(l, t) {
+      switch (t) {
+        case 'keypress':
+          switch (l) {
+            case 'x':
+              return this.fucky = !this.fucky;
+          }
+      }
     };
 
     return MenuScene;
