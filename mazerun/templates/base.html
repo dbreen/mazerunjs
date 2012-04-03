@@ -12,8 +12,8 @@
     {% load compress %}
     {% compress css %}
     {% block compress_css %}
-	<link rel="stylesheet" href="{{ MEDIA_URL }}css/base.css" type="text/css" />
-	<link rel="stylesheet" href="{{ MEDIA_URL }}css/style.css" type="text/css" />
+        <link rel="stylesheet" href="{{ MEDIA_URL }}css/base.css" type="text/css" />
+        <link rel="stylesheet" href="{{ MEDIA_URL }}css/styles.css" type="text/css" />
     {% endblock %}
     {% endcompress %}
 
@@ -27,8 +27,8 @@
 <body>
     <div id="container">
         <div id="header">
-            <h1>Maze Run</h1>
-            <div class="author">by: Dan Breen</div>
+            {% block header %}
+            {% endblock %}
         </div>
         
         <div id="content">
@@ -53,7 +53,6 @@
     {% compress js %}
     {% block compress_js %}
     {% endblock %}
-    {% endcompress %}
     <script language="javascript">
     $(function() {
         $('.messages li a.hide').click(function(e) {
@@ -62,5 +61,6 @@
         });
     });
     </script>
+    {% endcompress %}
 </body>
 </html>

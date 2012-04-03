@@ -148,6 +148,7 @@ ul.messages li.error {
 }
 #mazecontainer canvas {
     outline: none;
+    cursor: pointer;
 }
 div.instructions {
     margin: 0 auto;

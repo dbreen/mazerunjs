@@ -24,7 +24,10 @@ class Scene
     keypress: (letter, event_type) ->
         return false
 
-    mouseclick: ->
+    mouseclick: (x, y) ->
+    mouseup: (x, y) ->
+    mousedown: (x, y) ->
+    mousemove: (x, y) ->
 
 class SceneManager
     constructor: (p5) ->
@@ -69,5 +72,14 @@ class SceneManager
             letter = String.fromCharCode(charCode)
         @active_scene.keypress(letter, event.type)
 
-    mouseclick: ->
-        @active_scene.mouseclick()
+    mouseclick: (x, y) ->
+        @active_scene.mouseclick(x, y)
+
+    mouseup: (x, y) ->
+        @active_scene.mouseup(x, y)
+
+    mousedown: (x, y) ->
+        @active_scene.mousedown(x, y)
+
+    mousemove: (x, y) ->
+        @active_scene.mousemove(x, y)

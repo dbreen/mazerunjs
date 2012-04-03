@@ -1,5 +1,5 @@
 (function() {
-  var DERP, DIFFICULTY_WIDTHS, DIRECTIONS, DIRS, DOWN, EASY, HARD, IMPOSSIBRU, LEFT, MEDIUM, Marker, Maze, MazeScene, MenuScene, Particle, Pipe, Player, RIGHT, Scene, SceneManager, TOP, center_text, constants, draw_lines, draw_lines_from, point_in_rect, random_choice, random_color, _ref, _ref2,
+  var DERP, DIFFICULTY_WIDTHS, DIRECTIONS, DIRS, DOWN, DesignerScene, EASY, HARD, IMPOSSIBRU, LEFT, MEDIUM, Marker, Maze, MazeScene, MenuScene, Particle, Pipe, Player, RIGHT, Scene, SceneManager, TOP, center_text, constants, draw_lines, draw_lines_from, point_in_rect, random_choice, random_color, _ref, _ref2,
     __slice = Array.prototype.slice,
     __indexOf = Array.prototype.indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
     __hasProp = Object.prototype.hasOwnProperty,
@@ -352,13 +352,30 @@
         scene_manager = new SceneManager(p5);
         scene_manager.register_scene('main', MazeScene);
         scene_manager.register_scene('menu', MenuScene);
-        return scene_manager.switch_scene('menu');
+        scene_manager.register_scene('designer', DesignerScene);
+        if (typeof design_mode !== "undefined" && design_mode !== null) {
+          return scene_manager.switch_scene('designer');
+        } else {
+          return scene_manager.switch_scene('menu');
+        }
       };
       p5.draw = function() {
         return scene_manager.run(p5);
       };
-      return p5.mouseClicked = function() {
-        return scene_manager.mouseclick();
+      p5.mouseClicked = function() {
+        return scene_manager.mouseclick(p5.mouseX, p5.mouseY);
+      };
+      p5.mousePressed = function() {
+        return scene_manager.mousedown(p5.mouseX, p5.mouseY);
+      };
+      p5.mouseReleased = function() {
+        return scene_manager.mouseup(p5.mouseX, p5.mouseY);
+      };
+      p5.mouseMoved = function() {
+        return scene_manager.mousemove(p5.mouseX, p5.mouseY);
+      };
+      return p5.mouseDragged = function() {
+        return scene_manager.mousemove(p5.mouseX, p5.mouseY);
       };
     };
     $(document).bind('keypress keyup keydown', function(event) {
@@ -398,7 +415,13 @@
       return false;
     };
 
-    Scene.prototype.mouseclick = function() {};
+    Scene.prototype.mouseclick = function(x, y) {};
+
+    Scene.prototype.mouseup = function(x, y) {};
+
+    Scene.prototype.mousedown = function(x, y) {};
+
+    Scene.prototype.mousemove = function(x, y) {};
 
     return Scene;
 
@@ -456,13 +479,121 @@
       return this.active_scene.keypress(letter, event.type);
     };
 
-    SceneManager.prototype.mouseclick = function() {
-      return this.active_scene.mouseclick();
+    SceneManager.prototype.mouseclick = function(x, y) {
+      return this.active_scene.mouseclick(x, y);
+    };
+
+    SceneManager.prototype.mouseup = function(x, y) {
+      return this.active_scene.mouseup(x, y);
+    };
+
+    SceneManager.prototype.mousedown = function(x, y) {
+      return this.active_scene.mousedown(x, y);
+    };
+
+    SceneManager.prototype.mousemove = function(x, y) {
+      return this.active_scene.mousemove(x, y);
     };
 
     return SceneManager;
 
   })();
+
+  DesignerScene = (function(_super) {
+
+    __extends(DesignerScene, _super);
+
+    function DesignerScene() {
+      DesignerScene.__super__.constructor.apply(this, arguments);
+    }
+
+    DesignerScene.prototype.load = function(p5) {
+      return this.mouse_down = false;
+    };
+
+    DesignerScene.prototype.setup = function(grid) {
+      var xy, y, _ref3, _ref4;
+      _ref3 = [24, 18], this.x = _ref3[0], this.y = _ref3[1];
+      if (grid) {
+        this.grid = grid;
+      } else {
+        this.grid = (function() {
+          var _ref4, _results;
+          _results = [];
+          for (xy = 0, _ref4 = this.x; 0 <= _ref4 ? xy < _ref4 : xy > _ref4; 0 <= _ref4 ? xy++ : xy--) {
+            _results.push((function() {
+              var _ref5, _results2;
+              _results2 = [];
+              for (y = 0, _ref5 = this.y; 0 <= _ref5 ? y < _ref5 : y > _ref5; 0 <= _ref5 ? y++ : y--) {
+                _results2.push(false);
+              }
+              return _results2;
+            }).call(this));
+          }
+          return _results;
+        }).call(this);
+      }
+      this.gridsize = 32;
+      _ref4 = [13, 15], this.offsetx = _ref4[0], this.offsety = _ref4[1];
+      return console.log(this.grid);
+    };
+
+    DesignerScene.prototype.render = function(p5) {
+      var _this = this;
+      p5.background(255);
+      p5.stroke(255, 255, 255);
+      return _.each(this.grid, function(row, x) {
+        return _.each(row, function(val, y) {
+          if (val) {
+            p5.fill(128);
+          } else {
+            p5.fill(0);
+          }
+          return p5.rect(_this.offsetx + _this.gridsize * x, _this.offsety + _this.gridsize * y, _this.gridsize, _this.gridsize);
+        });
+      });
+    };
+
+    DesignerScene.prototype.get_grid_coords = function(x, y) {
+      var gridx, gridy;
+      gridx = Math.floor((x - this.offsetx) / this.gridsize);
+      gridy = Math.floor((y - this.offsety) / this.gridsize);
+      if ((0 <= gridx && gridx < this.x) && (0 <= gridy && gridy < this.y)) {
+        return [gridx, gridy];
+      }
+      return null;
+    };
+
+    DesignerScene.prototype.toggle_grid = function(x, y) {
+      var coords;
+      coords = this.get_grid_coords(x, y);
+      if (!coords) return;
+      return this.grid[coords[0]][coords[1]] = this.toggle_on;
+    };
+
+    DesignerScene.prototype.mouseclick = function(x, y) {
+      return this.toggle_grid(x, y);
+    };
+
+    DesignerScene.prototype.mousedown = function(x, y) {
+      var coords;
+      coords = this.get_grid_coords(x, y);
+      if (coords) this.toggle_on = !this.grid[coords[0]][coords[1]];
+      return this.mouse_down = true;
+    };
+
+    DesignerScene.prototype.mouseup = function(x, y) {
+      console.log('up');
+      return this.mouse_down = false;
+    };
+
+    DesignerScene.prototype.mousemove = function(x, y) {
+      if (this.mouse_down) return this.toggle_grid(x, y, true);
+    };
+
+    return DesignerScene;
+
+  })(Scene);
 
   MazeScene = (function(_super) {
 

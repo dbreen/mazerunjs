@@ -4,6 +4,8 @@ from django.conf import settings
 
 urlpatterns = patterns('mazerun.core.views',
     url(r'^$', 'home', name='home'),
+    url(r'^designer/$', 'maze_designer', name='maze_designer_new'),
+    url(r'^designer/(?P<maze_id>\d+)/$', 'maze_designer', name='maze_designer'),
     url(r'^download-source/$', 'download_source', name='download_source'),
 )
 
